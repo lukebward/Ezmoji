@@ -4,16 +4,31 @@ System-wide `:shortcode:` emoji autocomplete for macOS, Slack/Discord style. Typ
 few letters in **any app**, a small picker pops up next to your cursor, and **Tab** (or Enter)
 inserts the emoji.
 
-```
-you type:   this is great :tad⇥
-you get:    this is great 🎉
+![Ezmoji demo](docs/demo.gif)
+
+*(terminal re-enactment of the flow — the real picker is a small native popup at your caret;
+regenerate with `vhs docs/demo.tape`)*
+
+## Install
+
+### Homebrew
+
+```sh
+brew install --cask lukebward/tap/ezmoji
 ```
 
-## Build & install
+The app isn't notarized (personal project, no Apple Developer Program), so if Gatekeeper blocks
+the first launch:
+
+```sh
+xattr -d com.apple.quarantine /Applications/Ezmoji.app
+```
+
+### From source
 
 ```sh
 ./build.sh
-cp -r build/Ezmoji.app /Applications/   # optional but recommended
+cp -r build/Ezmoji.app /Applications/
 open /Applications/Ezmoji.app
 ```
 
@@ -51,7 +66,8 @@ stays completely dormant in them:
 
 - **Chat**: Slack, Discord (+ PTB/Canary), Telegram (both variants), WhatsApp, Signal, Microsoft
   Teams (new + classic), Element, Mattermost, Rocket.Chat, Zulip, Beeper
-- **Productivity / dev**: Notion, Figma, Linear, ClickUp, Asana, GitHub Desktop
+- **Productivity / dev**: Notion, Figma, Linear, ClickUp, Asana, GitHub Desktop, Claude
+  (Claude Code's composer has its own `:emoji:` completion)
 
 Deliberately *not* excluded: **Zoom** (its emoji shortcodes have no keyboard autocomplete), and
 editors like VS Code / Cursor / Zed / Obsidian (no native support, or plugin-only) — Ezmoji is

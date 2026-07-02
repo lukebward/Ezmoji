@@ -111,6 +111,7 @@ final class ExclusionList {
         "com.clickup.desktop-app": "ClickUp",
         "com.electron.asana": "Asana",
         "com.github.GitHubClient": "GitHub Desktop",
+        "com.anthropic.claudefordesktop": "Claude",
     ]
 
     private let defaults: UserDefaults

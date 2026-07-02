@@ -22,7 +22,7 @@ Alternatives considered and rejected:
 | `EmojiTapController` | The state machine: `idle` → `active(query)`. Owns the CGEventTap, decides consume vs pass-through per keystroke. |
 | `PickerPanel` | Borderless, non-activating `NSPanel` (never takes key focus — the target app keeps typing focus the whole time). Manual frame layout, ≤8 rows. |
 | `CaretLocator` | Caret screen position via the AX API (`AXSelectedTextRange` → `AXBoundsForRange`), falling back to the mouse location. Anchored once per session so the panel doesn't jitter. |
-| `ExclusionList` | UserDefaults-backed bundle-ID set where Ezmoji stays dormant. Seeded with ~21 apps that have native `:emoji:` autocomplete (Slack, Discord ×3, Telegram ×2, WhatsApp, Signal, Teams ×2, Element, Mattermost, Rocket.Chat, Zulip, Beeper, Notion, Figma, Linear, ClickUp, Asana, GitHub Desktop). Zoom deliberately omitted — its shortcodes have no keyboard autocomplete. Managed from the status menu. |
+| `ExclusionList` | UserDefaults-backed bundle-ID set where Ezmoji stays dormant. Seeded with ~22 apps that have native `:emoji:` autocomplete (Slack, Discord ×3, Telegram ×2, WhatsApp, Signal, Teams ×2, Element, Mattermost, Rocket.Chat, Zulip, Beeper, Notion, Figma, Linear, ClickUp, Asana, GitHub Desktop, Claude). Zoom deliberately omitted — its shortcodes have no keyboard autocomplete. Managed from the status menu. |
 | `Typist` | Posts synthetic backspaces + a unicode-string keyboard event. Marks its events with a magic `eventSourceUserData` so the tap ignores its own output. |
 | `AppDelegate` | Status item, permission prompt + poll-until-granted, Pause, Launch at Login (`SMAppService`), Quit. |
 
