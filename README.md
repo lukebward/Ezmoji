@@ -1,13 +1,11 @@
 # Ezmoji
 
-System-wide `:shortcode:` emoji autocomplete for macOS, Slack/Discord style. Type `:` followed by a
-few letters in **any app**, a small picker pops up next to your cursor, and **Tab** (or Enter)
-inserts the emoji.
+System-wide `:shortcode:` emoji autocomplete for macOS. Type `:` and a few letters in any app,
+a picker appears at your cursor, and Tab (or Enter) inserts the emoji.
 
 ![Ezmoji demo](docs/demo.gif)
 
-*(terminal re-enactment of the flow — the real picker is a small native popup at your caret;
-regenerate with `vhs docs/demo.tape`)*
+*Terminal re-enactment (`vhs docs/demo.tape`); the real picker is a native popup at your caret.*
 
 ## Install
 
@@ -17,8 +15,7 @@ regenerate with `vhs docs/demo.tape`)*
 brew install --cask lukebward/tap/ezmoji
 ```
 
-The app isn't notarized (personal project, no Apple Developer Program), so if Gatekeeper blocks
-the first launch:
+The app isn't notarized, so if Gatekeeper blocks the first launch:
 
 ```sh
 xattr -d com.apple.quarantine /Applications/Ezmoji.app
@@ -32,69 +29,61 @@ cp -r build/Ezmoji.app /Applications/
 open /Applications/Ezmoji.app
 ```
 
-Requires Xcode command line tools (`swiftc`). No other dependencies.
+Requires the Xcode command line tools (`swiftc`); no other dependencies.
 
 ## First-run permission
 
-The app watches keystrokes globally, which macOS gates behind Accessibility:
+Ezmoji watches keystrokes globally, which macOS gates behind Accessibility. Enable it under
+System Settings → Privacy & Security → Accessibility (a prompt appears on first launch). The
+app picks up the grant within a couple of seconds; no relaunch needed. If typing still doesn't
+insert, also check Input Monitoring.
 
-1. On first launch you'll get a prompt — or open **System Settings → Privacy & Security →
-   Accessibility** yourself.
-2. Add / enable **Ezmoji**.
-3. That's it. The app picks up the grant automatically within a couple of seconds (no relaunch
-   needed). If typing still doesn't insert, also check **Privacy & Security → Input Monitoring**.
-
-The menu bar icon (🙂 face) shows permission status and has Pause / Launch at Login / Quit.
+The menu bar icon shows permission status and has Pause, Launch at Login, and Quit.
 
 ## Usage
 
-- `:smi` → picker appears after the first letter, filtered as you type
-- **Tab** or **Enter** — insert the highlighted emoji
-- **↑ / ↓** — move the highlight
-- **Esc** — dismiss
-- Typing the full closing colon (`:tada:`) inserts immediately, no Tab needed
-- Space or any non-shortcode character cancels quietly
+- `:smi` — picker appears after the first letter and filters as you type
+- Tab or Enter — insert the highlighted emoji
+- ↑ / ↓ — move the highlight
+- Esc — dismiss
+- `:tada:` typed in full inserts immediately, no Tab needed
+- Space or any other non-shortcode character cancels
 
-Shortcode names are the standard [gemoji](https://github.com/github/gemoji) set (what GitHub and
-Discord use, and mostly what Slack uses): `:joy:`, `:+1:`, `:fire:`, `:eyes:`, `:rocket:`,
-`:thinking_face:`, … ~1,900 aliases total, bundled in `Resources/emoji.json`.
+Shortcodes are the [gemoji](https://github.com/github/gemoji) set used by GitHub and Discord,
+and mostly by Slack: `:joy:`, `:+1:`, `:fire:`, `:eyes:`, `:rocket:`, `:thinking_face:` —
+about 1,900 aliases, bundled in `Resources/emoji.json`.
 
 ## Per-app exclusions
 
-Apps that already have their own `:emoji:` autocomplete are excluded out of the box — Ezmoji
-stays completely dormant in them:
+Ezmoji stays inactive in apps that already have `:emoji:` autocomplete:
 
-- **Chat**: Slack, Discord (+ PTB/Canary), Telegram (both variants), WhatsApp, Signal, Microsoft
+- Chat: Slack, Discord (+ PTB/Canary), Telegram (both variants), WhatsApp, Signal, Microsoft
   Teams (new + classic), Element, Mattermost, Rocket.Chat, Zulip, Beeper
-- **Productivity / dev**: Notion, Figma, Linear, ClickUp, Asana, GitHub Desktop, Claude
-  (Claude Code's composer has its own `:emoji:` completion)
+- Productivity: Notion, Figma, Linear, ClickUp, Asana, GitHub Desktop, Claude (Claude Code has
+  its own completion)
 
-Deliberately *not* excluded: **Zoom** (its emoji shortcodes have no keyboard autocomplete), and
-editors like VS Code / Cursor / Zed / Obsidian (no native support, or plugin-only) — Ezmoji is
-useful there.
+Zoom is not excluded — its emoji shortcodes have no keyboard autocomplete. Neither are editors
+like VS Code, Cursor, Zed, or Obsidian.
 
-- Menu bar → **Disable in ‹App›** — toggles Ezmoji for whatever app you were just using
-- Menu bar → **Excluded Apps** — lists all exclusions; click one to re-enable Ezmoji there
-- The list persists across restarts (`defaults` domain `dev.lukeward.Ezmoji`, key `excludedApps`)
+Manage the list from the menu bar: "Disable in ‹App›" toggles the app you were just using, and
+"Excluded Apps" lists current exclusions (click one to re-enable). The list persists in
+`defaults` (domain `dev.lukeward.Ezmoji`, key `excludedApps`).
 
-Exclusions are per-app, not per-site: browsers count as one app, so GitHub's in-browser
-autocomplete will overlap with Ezmoji's unless you exclude the whole browser.
+Exclusions are per-app, not per-site: to avoid overlapping with GitHub's in-browser
+autocomplete you would have to exclude the whole browser.
 
-## Quirks & limitations (by design — this is the simple version)
+## Limitations
 
-- **A `:` only arms the picker after a word boundary**, so `std::vector` and `https://` don't
+- `:` only arms the picker after a word boundary, so `std::vector` and `https://` don't
   trigger it.
-- **Password fields**: macOS Secure Input blocks event taps, so the app is automatically inert
-  there. Same reason it can't leak your passwords.
-- **Rebuild permissions**: `build.sh` signs with your Apple Development certificate when one
-  exists, so the Accessibility grant survives rebuilds. With no certificate it falls back to
-  ad-hoc signing, and each rebuild then needs the grant toggled off/on again.
-- **Insertion mechanism**: it deletes the `:query` you typed (synthetic backspaces) and types the
-  emoji as a unicode keystroke. Works in native apps, browsers, Slack, Discord, terminals. If some
-  exotic app misbehaves, Esc and move on.
-- No skin-tone variants, no frecency ranking, no custom emoji. It's ~550 lines on purpose.
+- macOS Secure Input blocks event taps, so Ezmoji is inert in password fields.
+- `build.sh` signs with an Apple Development certificate when available, so the Accessibility
+  grant survives rebuilds. The ad-hoc fallback requires re-granting after each rebuild.
+- Insertion deletes the typed `:query` with synthetic backspaces, then types the emoji as a
+  unicode keystroke. Works in native apps, browsers, Electron apps, and terminals.
+- No skin-tone variants, frecency ranking, or custom emoji.
 
-## Verify the matcher without launching
+## Selftest
 
 ```sh
 build/Ezmoji.app/Contents/MacOS/Ezmoji --selftest
