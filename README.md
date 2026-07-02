@@ -99,8 +99,3 @@ autocomplete will overlap with Ezmoji's unless you exclude the whole browser.
 ```sh
 build/Ezmoji.app/Contents/MacOS/Ezmoji --selftest
 ```
-
-## Prior art
-
-If you outgrow this, [Rocket](https://matthewpalmer.net/rocket/) is a polished free app that does
-the same thing with more features. This exists because building it was half the fun.

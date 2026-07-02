@@ -6,7 +6,7 @@ chosen emoji.
 
 ## Approach chosen
 
-**Global CGEventTap + synthetic keystroke replacement** (the Rocket approach).
+**Global CGEventTap + synthetic keystroke replacement.**
 
 Alternatives considered and rejected:
 - *Input Method Kit (custom input source)* — the "correct" way, but users must switch keyboard
