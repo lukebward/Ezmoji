@@ -115,17 +115,25 @@ final class ExclusionList {
     ]
 
     private let defaults: UserDefaults
-    private let key = "excludedApps"
-    private(set) var apps: [String: String] // bundle ID → display name
+    private let excludedKey = "excludedApps"
+    private let knownKey = "knownApps"
+    private(set) var apps: [String: String]  // currently excluded: bundle ID → display name
+    private(set) var known: [String: String] // menu roster: bundle ID → display name
 
     init(defaults: UserDefaults) {
         self.defaults = defaults
-        if let stored = defaults.dictionary(forKey: key) as? [String: String] {
+        if let stored = defaults.dictionary(forKey: excludedKey) as? [String: String] {
             apps = stored
         } else {
             apps = Self.seed
-            defaults.set(apps, forKey: key)
+            defaults.set(apps, forKey: excludedKey)
         }
+        // Roster = seed ∪ everything ever excluded, so un-excluding an app keeps
+        // its row in the menu (unchecked) instead of losing it forever.
+        known = defaults.dictionary(forKey: knownKey) as? [String: String] ?? [:]
+        for (id, name) in Self.seed where known[id] == nil { known[id] = name }
+        for (id, name) in apps where known[id] == nil { known[id] = name }
+        defaults.set(known, forKey: knownKey)
     }
 
     func contains(_ bundleID: String) -> Bool {
@@ -138,12 +146,11 @@ final class ExclusionList {
         } else {
             apps[bundleID] = name
         }
-        defaults.set(apps, forKey: key)
-    }
-
-    func remove(bundleID: String) {
-        apps.removeValue(forKey: bundleID)
-        defaults.set(apps, forKey: key)
+        defaults.set(apps, forKey: excludedKey)
+        if known[bundleID] == nil {
+            known[bundleID] = name
+            defaults.set(known, forKey: knownKey)
+        }
     }
 }
 
@@ -638,7 +645,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         disableHereItem.target = self
         menu.addItem(disableHereItem)
 
-        excludedSubmenuItem = NSMenuItem(title: "Excluded Apps", action: nil, keyEquivalent: "")
+        excludedSubmenuItem = NSMenuItem(title: "App Exclusions", action: nil, keyEquivalent: "")
         excludedSubmenuItem.submenu = NSMenu()
         menu.addItem(excludedSubmenuItem)
 
@@ -699,7 +706,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         let submenu = excludedSubmenuItem.submenu!
         submenu.removeAllItems()
-        let entries = ExclusionList.shared.apps.sorted {
+        let entries = ExclusionList.shared.known.sorted {
             $0.value.localizedCaseInsensitiveCompare($1.value) == .orderedAscending
         }
         if entries.isEmpty {
@@ -707,9 +714,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             submenu.addItem(none)
         } else {
             for (id, name) in entries {
-                let item = NSMenuItem(title: name, action: #selector(removeExcluded(_:)), keyEquivalent: "")
+                let item = NSMenuItem(title: name, action: #selector(toggleExcluded(_:)), keyEquivalent: "")
                 item.target = self
-                item.state = .on
+                item.state = ExclusionList.shared.contains(id) ? .on : .off
                 item.representedObject = id
                 submenu.addItem(item)
             }
@@ -721,9 +728,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         ExclusionList.shared.toggle(bundleID: front.id, name: front.name)
     }
 
-    @objc private func removeExcluded(_ sender: NSMenuItem) {
+    @objc private func toggleExcluded(_ sender: NSMenuItem) {
         guard let id = sender.representedObject as? String else { return }
-        ExclusionList.shared.remove(bundleID: id)
+        let name = ExclusionList.shared.known[id] ?? sender.title
+        ExclusionList.shared.toggle(bundleID: id, name: name)
     }
 
     @objc private func openAccessibilitySettings() {
@@ -783,15 +791,23 @@ func runSelfTest() -> Bool {
     check("exclusions seed includes Slack", exclusions.contains("com.tinyspeck.slackmacgap"))
     check("exclusions seed includes Discord", exclusions.contains("com.hnc.Discord"))
     exclusions.toggle(bundleID: "com.tinyspeck.slackmacgap", name: "Slack")
-    check("exclusion toggle removes", !exclusions.contains("com.tinyspeck.slackmacgap"))
-    check(
-        "exclusion removal persists (no re-seed)",
-        !ExclusionList(defaults: suite).contains("com.tinyspeck.slackmacgap")
-    )
+    check("toggle un-excludes", !exclusions.contains("com.tinyspeck.slackmacgap"))
+    check("un-excluded app stays in roster", exclusions.known["com.tinyspeck.slackmacgap"] != nil)
+    let reloaded = ExclusionList(defaults: suite)
+    check("un-exclusion persists (no re-seed)", !reloaded.contains("com.tinyspeck.slackmacgap"))
+    check("roster persists across reload", reloaded.known["com.tinyspeck.slackmacgap"] != nil)
+    reloaded.toggle(bundleID: "com.tinyspeck.slackmacgap", name: "Slack")
+    check("toggle re-excludes from roster", reloaded.contains("com.tinyspeck.slackmacgap"))
     exclusions.toggle(bundleID: "com.example.someapp", name: "SomeApp")
-    check("exclusion toggle adds", ExclusionList(defaults: suite).contains("com.example.someapp"))
-    exclusions.remove(bundleID: "com.example.someapp")
-    check("exclusion remove works", !exclusions.contains("com.example.someapp"))
+    check("new app lands in roster", exclusions.known["com.example.someapp"] != nil)
+    check("new app exclusion persists", ExclusionList(defaults: suite).contains("com.example.someapp"))
+    // Migration: pre-1.0.1 installs have excludedApps but no knownApps.
+    suite.removePersistentDomain(forName: suiteName)
+    suite.set(["notion.id": "Notion"], forKey: "excludedApps")
+    let migrated = ExclusionList(defaults: suite)
+    check("migration keeps stored exclusions", migrated.contains("notion.id"))
+    check("migration restores removed seed apps to roster", migrated.known["com.tinyspeck.slackmacgap"] != nil)
+    check("migration does not re-exclude removed seed apps", !migrated.contains("com.tinyspeck.slackmacgap"))
     suite.removePersistentDomain(forName: suiteName)
     return ok
 }

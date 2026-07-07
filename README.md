@@ -66,8 +66,9 @@ Zoom is not excluded — its emoji shortcodes have no keyboard autocomplete. Nei
 like VS Code, Cursor, Zed, or Obsidian.
 
 Manage the list from the menu bar: "Disable in ‹App›" toggles the app you were just using, and
-"Excluded Apps" lists current exclusions (click one to re-enable). The list persists in
-`defaults` (domain `dev.lukeward.Ezmoji`, key `excludedApps`).
+"App Exclusions" lists known apps with a checkmark on the excluded ones — click to toggle either
+way. The list persists in `defaults` (domain `dev.lukeward.Ezmoji`, keys `excludedApps` and
+`knownApps`).
 
 Exclusions are per-app, not per-site: to avoid overlapping with GitHub's in-browser
 autocomplete you would have to exclude the whole browser.
